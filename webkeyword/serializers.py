@@ -11,7 +11,7 @@
 # -----------------*-----------------
 
 from rest_framework import serializers
-from webkeyword.models import User,Project,CaseGroup,Case,CaseDatails
+from webkeyword.models import User,Project,CaseGroup,Case,CaseProcedure,GlobalData
 
 
 class UserSerializers(serializers.ModelSerializer):
@@ -39,16 +39,36 @@ class ProjectSerializers(serializers.ModelSerializer):
 		fields = ('id','name','version','type','description')
 
 	def update(self, instance, validated_data):
-		updateTime = serializers.DateTimeField(format='%Y-%m-%d %H:%m:%s', required=False, read_only=True)
-		instance.name = validated_data.get("name",validated_data.name)
-		instance.version = validated_data.get("version",validated_data.version)
-		instance.description = validated_data.get("description",validated_data.description)
+		updateTime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+		instance.name = validated_data.get("name",instance.name)
+		instance.version = validated_data.get("version",instance.version)
+		instance.description = validated_data.get("description",instance.description)
 		instance.updateTime = updateTime
 		instance.save()
 		return instance
 
 	def create(self, validated_data):
 		return Project.objects.create(**validated_data)
+
+
+class GlobalParamsSerializers(serializers.ModelSerializer):
+	"""
+	全局变量添加接口序列化
+	"""
+
+	class Meta:
+		model = GlobalData
+		fields = ("id","name","description","params")
+
+	def update(self, instance, validated_data):
+		instance.name = validated_data.get("name",instance.name)
+		instance.description = validated_data.get('description',instance.description)
+		instance.params = validated_data.get('params',instance.params)
+		instance.save()
+		return instance
+
+	def create(self, validated_data):
+		return GlobalData.objects.create(**validated_data)
 
 
 class CaseGroupSerializers(serializers.ModelSerializer):
@@ -60,11 +80,13 @@ class CaseGroupSerializers(serializers.ModelSerializer):
 		fields = ('id','groupName','description','projectId','createTime','updateTime')
 
 	def update(self, instance, validated_data):
-		updateTime = serializers.DateTimeField(format='%Y-%m-%d %H:%m:%s', required=False, read_only=True)
+		# updateTime = serializers.DateTimeField(format="%Y-%m-%d %H:%m:%s", required=False, read_only=True)
+
+		instance.projectId = validated_data.get("projectId",instance.projectId)
 		instance.groupName = validated_data.get("groupName",instance.groupName)
 		instance.description = validated_data.get("description",instance.description)
-		instance.projectId = validated_data.get("projectId",instance.projectId)
-		instance.updateTime = updateTime
+		instance.createTime = validated_data.get("createTime",instance.createTime)
+		instance.updateTime = validated_data.get("updateTime",instance.updateTime)
 		instance.save()
 		return instance
 
@@ -101,13 +123,14 @@ class CaseSerializers(serializers.ModelSerializer):
 
 
 
-class CaseDatailsSerializers(serializers.ModelSerializer):
+class CaseProcedureSerializers(serializers.ModelSerializer):
 	"""
 	添加用例操作步骤接口
 	"""
 	class Meta:
-		model = CaseDatails
-		fields = ("id","case_id","datails","seq","Key_word","type","ele","value")
+		model = CaseProcedure
+		fields = ("id","caseId","datails","step","KeyWord","element","returnValue","link_step_id",
+				  "judge_key_word","judge_step_set","for_step_set")
 
 
 	def update(self, instance, validated_data):
@@ -117,13 +140,17 @@ class CaseDatailsSerializers(serializers.ModelSerializer):
 		:param validated_data:
 		:return:
 		"""
-		instance.case_id = validated_data.get("case_id",instance.case_id)
+		instance.caseId = validated_data.get("caseId",instance.caseId)
 		instance.datails = validated_data.get("datails",instance.datails)
-		instance.seq = validated_data.get("seq",instance.seq)
-		instance.Key_word = validated_data.get("Key_word",instance.Key_word)
-		instance.type = validated_data.get("type",instance.type)
-		instance.ele = validated_data.get("ele",instance.ele)
-		instance.value = validated_data.get("type",instance.value)
+		instance.step = validated_data.get("step",instance.step)
+		instance.KeyWord = validated_data.get("KeyWord",instance.KeyWord)
+		instance.element = validated_data.get("element",instance.element)
+		instance.returnValue = validated_data.get("returnValue",instance.returnValue)
+		instance.link_step_id = validated_data.get("link_step_id",instance.link_step_id)
+		instance.judge_key_word = validated_data.get("judge_key_word",instance.judge_word)
+		instance.judge_value = validated_data.get("judge_value",instance.judge_value)
+		instance.judge_step_set = validated_data.get("judge_step_set",instance.judge_step_set)
+		instance.for_step_set = validated_data.get("for_step_set",instance.for_step_set)
 		instance.save()
 		return instance
 
@@ -133,4 +160,19 @@ class CaseDatailsSerializers(serializers.ModelSerializer):
 		:param validated_data:
 		:return:
 		"""
-		return CaseDatails.objects.create(**validated_data)
+		return CaseProcedure.objects.create(**validated_data)
+
+
+class StartCaseSeriailzers(serializers.Serializer):
+	"""
+	执行单个测试用例接口序列化
+	"""
+	# BrowserType_chioce = (
+	# 	("Chrome","Chrome"),
+	# 	("Firefox","Firefox")
+	# )
+	browserType = serializers.CharField(max_length=256,required=True)
+	webdriverPath = serializers.CharField(max_length=256,required=True)
+	projectId=serializers.IntegerField(required=True)
+	caseGroupId = serializers.IntegerField(required=True)
+	caseId = serializers.IntegerField(required=True)

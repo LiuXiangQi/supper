@@ -1,10 +1,12 @@
 # coding:utf-8
 
 from selenium.webdriver.support.ui import WebDriverWait
-from webkeyword.utils.error_except import EleNOtFound
+from webkeyword.utils.errorException import EleNOtFound
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.select import Select
 import time,os
+import abc
+
 
 class BaseView(object):
 
@@ -103,7 +105,6 @@ class BaseView(object):
 			return True
 		except:
 			return False
-
 
 	def click(self,loc):
 		self.find_element(loc).click()
@@ -219,35 +220,34 @@ class BaseView(object):
 		y = self.get_window_size()['height']
 		return x,y
 
-	def swipeUp(self,x_num=0.5,y1_num=0.1,y2_num=0.5,time=500):
+	def swipeUp(self,x_num=0.5,y1_num=0.9,y2_num=0.1,time=500):
 		are = self.get_size()
 		x = int(are[0]*x_num)
 		y1 = int(are[1]*y1_num)
 		y2 = int(are[1]*y2_num)
 		self.swipe(x,y1,x,y2,time)
 
-	def swipeDown(self,x_num=0.5,y1_num=0.1,y2_num=0.5,time=500):
+	def swipeDown(self,x_num=0.5,y1_num=0.1,y2_num=0.7,time=500):
 		are = self.get_size()
 		x = int(are[0]*x_num)
 		y1 = int(are[1]*y1_num)
 		y2 = int(are[1]*y2_num)
-		self.swipe(x,y2,x,y1,time)
+		self.swipe(x,y1,x,y2,time)
 
-	def swipeRight(self,time=500):
+	def swipeRight(self,x_num=0.1,y1_num=0.5,x2_num=0.9,time=500):
 		are = self.get_size()
-		x1 = int(are[0]*0.1)
-		x2 = int(are[0]*0.9)
-		y = int(are[1]*0.5)
-		self.swipe(x1,y,x2,y,time)
+		x1 = int(are[0] * x_num)
+		x2 = int(are[0] * x2_num)
+		y = int(are[1] * y1_num)
+		self.swipe(x1, y, x2, y, time)
 
-	def swipeLeft(self,x_num=0.1,y1_num=0.5,x2_num=0.9,time=500):
+	def swipeLeft(self,x_num=0.9,y1_num=0.5,x2_num=0.1,time=500):
 
 		are = self.get_size()
 		x1 = int(are[0]*x_num)
 		x2 = int(are[0]*x2_num)
 		y = int(are[1]*y1_num)
-		self.swipe(x2,y,x1,y,time)
-
+		self.swipe(x1,y,x2,y,time)
 
 	def moveTo(self,loc):
 		"""鼠标移动到元素ele"""
@@ -258,3 +258,179 @@ class BaseView(object):
 		""" 调用js 拖拽"""
 		js = "var q=document.documentElement.scrollTop={0}".format(num)
 		self.driver.execute_script(js)
+
+
+class UIKeyWordHolder(metaclass=abc.ABCMeta):
+
+	def __init__(self,driver):
+		self.driver = driver
+
+	@abc.abstractmethod
+	def key_word_func(self,*args,**kwargs):
+		pass
+
+
+class CheckEle(UIKeyWordHolder):
+	"""
+	检查单个元素是否存在
+	"""
+	def key_word_func(self, loc, time=20):
+		try:
+			WebDriverWait(self.driver, time).until(lambda x: x.find_element(*loc))
+			return True
+		except:
+			return False
+
+
+class FindEle(UIKeyWordHolder):
+	"""
+	查找元素
+	"""
+
+	def key_word_func(self, loc, time=20):
+
+		if CheckEle(self.driver).key_word_func(loc,time):
+			loc_ele = self.driver.find_element(loc)
+			return loc_ele
+		else:
+			SystemScreenshotImage(self.driver).key_word_func()
+			raise EleNOtFound("元素未找到")
+
+
+
+class CheckEles(UIKeyWordHolder):
+	"""
+	检查多个元素是否存在
+	"""
+	def key_word_func(self,loc,time=20):
+		"""
+
+		:param loc:  type-->tuple sample('xpath',ele)
+		:param time: 最大等到时间
+		:return: bool
+		"""
+		try:
+			WebDriverWait(self.driver,time).until(lambda x:x.find_element(*loc))
+			return True
+		except:
+			return False
+
+
+class FindEles(UIKeyWordHolder):
+	"""
+	查找多个元素
+	"""
+	def key_word_func(self,loc,time=20):
+		"""
+
+		:param loc:  type-->tuple sample('xpath',ele)
+		:param time: 最大等待时间
+		:return: 已经找到的元素
+		"""
+		if CheckEles(self.driver).key_word_func(loc):
+			return self.driver.find_elements(loc)
+		else:
+			SystemScreenshotImage(self.driver).key_word_func()
+			raise EleNOtFound("元素未找到")
+
+
+class ClickEle(UIKeyWordHolder):
+	"""
+	点击单个元素
+	"""
+
+	def key_word_func(self, ele):
+		"""
+
+		:param ele: 已经获取到的元素返回值
+		:return:
+		"""
+		ele.click()
+
+
+class SendKeys(UIKeyWordHolder):
+	"""
+	输入值
+	"""
+	def key_word_func(self,ele,value):
+		"""
+
+		:param ele:  已经获取到的元素返回值
+		:param value:  send value
+		:return:
+		"""
+		ele.send_keys(value)
+
+
+class SelectFind(UIKeyWordHolder):
+	"""
+	select 下拉框选择元素
+	"""
+	def key_word_func(self,loc):
+		"""
+		:param loc:  type-->tuple sample('xpath',ele)
+		:return:
+		"""
+		s_ele = Select(FindEle(self.driver).key_word_func(loc))
+		return s_ele
+
+
+class GetValue(UIKeyWordHolder):
+	"""
+	获取元素 text 文本
+	"""
+	def key_word_func(self,ele):
+		value = ele.get_text
+		return value
+
+
+class GetAttribute(UIKeyWordHolder):
+	"""
+	获取元素的属性值
+	"""
+	def key_word_func(self,ele,attribute):
+		try:
+			attribute_text = ele.get_attribute(attribute)
+			return attribute_text
+		except:
+			SystemScreenshotImage(self.driver).key_word_func()
+			raise AttributeError("获取元素的{0}属性值错误".format(attribute))
+
+
+class CreateImagePath():
+	"""
+	截图文件夹
+	"""
+	def create_image_path(self):
+		base_path = os.path.abspath('.').split("superproject")[0]
+		project_path = base_path + "superproject/webkeyword"
+		project_image_dir = os.path.join(project_path, "images")
+		tm = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+		image_dir = os.path.join(project_image_dir, tm)
+		return image_dir
+
+
+class SystemScreenshotImage(UIKeyWordHolder):
+	"""
+	系统自动截图
+	"""
+	def key_word_func(self,*args,**kwargs):
+		image_dir = CreateImagePath().create_image_path()
+
+		if not os.path.exists(image_dir):
+			os.mkdir(image_dir)
+		tim = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
+		file_path = os.path.join(image_dir, tim + ".png")
+		self.driver.get_screenshot_as_file(file_path)
+
+
+class UserScreenshotImage(UIKeyWordHolder):
+
+	"""用户异常主动截图"""
+
+	def key_word_func(self,case_id,procedure_id,name):
+		image_dir = CreateImagePath().create_image_path()
+		if not os.path.exists(image_dir):
+			os.mkdir(image_dir)
+		file_path = os.path.join(image_dir,case_id+'_'+procedure_id+name+".png")
+		self.driver.get_screenshot_as_file(file_path)

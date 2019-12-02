@@ -12,13 +12,17 @@ from webkeyword.utils.api_response import JsonResponse
 from webkeyword.utils.token_auth import get_user_id
 from webkeyword.models import CaseGroup
 from webkeyword.serializers import CaseGroupSerializers
-from webkeyword.utils.schema_view import CustomSchema
+from django.core.paginator import Paginator,PageNotAnInteger,EmptyPage
 
 
 class CreateCaseGroupApi(APIView):
-	schema = CustomSchema()
 
 	def post(self,request):
+		"""
+		创建用例组接口
+		:param request:
+		:return:
+		"""
 		data = request.data
 		serializer = CaseGroupSerializers(data=data)
 		with transaction.atomic():
@@ -28,6 +32,11 @@ class CreateCaseGroupApi(APIView):
 			return JsonResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR,data=serializer.errors,msg="fail")
 
 	def get(self,request):
+		"""
+		获取用例组列表接口
+		:param request:
+		:return:
+		"""
 		data = request.data
 		try:
 			page_size = int(data.get('page_size',20))
@@ -50,8 +59,9 @@ class CreateCaseGroupApi(APIView):
 			"total": total
 		},msg="success")
 
+
 class OpertionCaseGroupApi(APIView):
-	schema = CustomSchema()
+	# schema = CustomSchema()
 
 	def get_objects(self,pk):
 		try:
@@ -59,13 +69,28 @@ class OpertionCaseGroupApi(APIView):
 		except:
 			pass
 
-	def get(self,pk):
+	def get(self,request,pk):
+		"""
+		获取单个用例组接口
+		:param request:
+		:param pk:
+		:return:
+		"""
 		pk_obj = self.get_objects(pk)
 		seriailzer = CaseGroupSerializers(pk_obj)
 		return JsonResponse(code=status.HTTP_200_OK,msg="seccuss",data=seriailzer.data)
 
-	def patch(self,request,pk):
+	def put(self,request,pk):
+		"""
+		修改用例组接口
+		:param request:
+		:param pk:
+		:return:
+		"""
 		pk_obj = self.get_objects(pk)
+		if not pk_obj:
+			return JsonResponse(code=status.HTTP_404_NOT_FOUND, data={"res: not find pk:{0}".format(pk)},msg="fail")
+
 		seriailzer = CaseGroupSerializers(pk_obj,data=request.data)
 		with transaction.atomic():
 			if seriailzer.is_valid():
@@ -73,9 +98,16 @@ class OpertionCaseGroupApi(APIView):
 				return JsonResponse(code=status.HTTP_200_OK,data=seriailzer.data,msg="seccuss")
 			return JsonResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR,data=seriailzer.errors,msg="fail")
 
-	def delete(self,pk):
+	def delete(self,request,pk):
+		"""
+		删除用例组接口
+		:param request:
+		:param pk:
+		:return:
+		"""
 		pk_obj = self.get_objects(pk)
-		seriailzer = CaseGroupSerializers(pk_obj)
+		if not pk_obj:
+			return JsonResponse(code=status.HTTP_404_NOT_FOUND, data={"res: not find pk:{0}".format(pk)},msg="fail")
 		with transaction.atomic():
-			seriailzer.delete()
+			pk_obj.delete()
 			return JsonResponse(code=status.HTTP_200_OK,msg="success")

@@ -1,4 +1,6 @@
 from django.db import models
+import django.utils.timezone as timezone
+
 
 # Create your models here.
 
@@ -25,6 +27,23 @@ class UserToken(models.Model):
         verbose_name = verbose_name_plural = '用户token表'
 
 
+class GlobalData(models.Model):
+    """
+    全局变量参数
+    """
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=128,verbose_name="全部变量名称",unique=True)
+    description = models.CharField(max_length=512,verbose_name="全局变量说明",null=True,blank=True)
+    params = models.CharField(max_length=512,verbose_name="变量参数值")
+
+    class Meta:
+        db_table = 'bt_global'
+        verbose_name = verbose_name_plural = "全局变量表"
+
+    def __str__(self):
+        return self.name
+
+
 class Project(models.Model):
     """项目表"""
     project_type = (
@@ -37,8 +56,9 @@ class Project(models.Model):
     type = models.CharField(max_length=50,verbose_name='项目类型',choices=project_type)
     description = models.CharField(max_length=1024,blank=True,null=True,verbose_name='描述')
     create_time = models.DateTimeField(auto_now_add=True,verbose_name='创建时间')
-    user_id = models.IntegerField(verbose_name='创建者id')
-
+    user_id = models.IntegerField(verbose_name='创建者id',unique=False,blank=False,null =True)
+    # null =True 数据库可以为空
+    # blank = True只是可以不传数据
     class Meta:
         db_table = 'bt_project'
         verbose_name = verbose_name_plural = "项目表"
@@ -54,8 +74,8 @@ class CaseGroup(models.Model):
     groupName = models.CharField(max_length=200,verbose_name='组名称',unique=True)
     description = models.CharField(max_length=1024,blank=True,null=True,verbose_name='描述')
     projectId = models.IntegerField(verbose_name='项目id')
-    createTime = models.DateTimeField(auto_now_add=True,verbose_name='创建时间')
-    updateTime = models.DateTimeField(auto_now_add=True,verbose_name='最后更新时间')
+    createTime = models.DateTimeField(verbose_name="保存日期",default=timezone.now)
+    updateTime = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'bt_case_group'
@@ -81,21 +101,52 @@ class Case(models.Model):
         return self.caseName
 
 
-class CaseDatails(models.Model):
+class CaseProcedure(models.Model):
     """用例执行步骤表"""
+
+    judge_word_key_word_type = (
+        (">","GreaterThan"),
+        ("<","LessThan"),
+        ("<=","EqualOrLessThan"),
+        (">=","EqualAndGreaterThan"),
+        ("==","Equal"),
+        ("in","Contain"),
+        ("not in","NotContain"),
+    )
     id = models.AutoField(primary_key=True)
-    CaseId = models.IntegerField(verbose_name='用例id')
-    seq = models.IntegerField(verbose_name='步骤顺序')
-    datails = models.CharField(max_length=1024,verbose_name='操作步骤描述')
-    KeyWord = models.CharField(max_length=1024,verbose_name='关键字')
-    type = models.CharField(max_length=1024,verbose_name='定位方式')
-    ele = models.CharField(max_length=1024,verbose_name='操作元素')
-    value = models.CharField(max_length=1024,verbose_name='操作值')
-    RunTime = models.CharField(max_length=1024,verbose_name='执行时间',blank=True,null=True)
+    caseId = models.IntegerField(verbose_name='用例id')
+    datails = models.CharField(max_length=256,verbose_name='操作步骤描述',blank=True,null=True)
+    KeyWord = models.CharField(max_length=256,verbose_name='关键字')
+    element = models.CharField(max_length=256,verbose_name='元素及定位方式')
+    returnValue = models.CharField(max_length=256,verbose_name='元素操作的返回值',blank=True,null=True)
+    step = models.IntegerField(verbose_name='步骤顺序',blank=False,null=False)
+    link_step_id = models.CharField(max_length=256,verbose_name='关联上一步',blank=True,null=True)   # model id->1
+    judge_key_word = models.CharField(max_length=256,verbose_name="判断类型",choices= judge_word_key_word_type,blank=True,null=True)
+    judge_value = models.CharField(max_length=256,verbose_name="判断比较的值",blank=True,null=True)
+    judge_step_set = models.CharField(max_length=256,verbose_name="条件语句成立执行语句",blank=True,null=True)
+    for_step_set = models.CharField(max_length=256,verbose_name="for循环执行语句",blank=True,null=True)
+    RunTime = models.CharField(max_length=256,verbose_name='执行时间',blank=True,null=True)
 
     class Meta:
-        db_table = 'bt_case_datails'
-        verbose_name = verbose_name_plural = '用例表'
+        db_table = 'bt_case_procedure'
+        verbose_name = verbose_name_plural = '用例模板表'
+
+    def __str__(self):
+        return self.id
+
+
+class CaseParameter(models.Model):
+    """
+    用例参数表
+    """
+    id = models.AutoField(primary_key=True)
+    caseId = models.IntegerField(verbose_name='用例id')
+    ProceduceId = models.IntegerField(verbose_name="用例步骤id")
+    paramsValues = models.CharField(max_length=1024,verbose_name="步骤参数")
+
+    class Meta:
+        db_table = "bt_case_params"
+        verbose_name = verbose_name_plural = "用例参数"
 
     def __str__(self):
         return self.id

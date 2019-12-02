@@ -13,6 +13,11 @@ from webkeyword.serializers import ProjectSerializers
 
 class CreateProjectApi(APIView):
 	def post(self,request):
+		"""
+		创建项目接口
+		:param request:
+		:return:
+		"""
 		data = request.data
 		serializer = ProjectSerializers(data=data)
 		with transaction.atomic():
@@ -20,6 +25,7 @@ class CreateProjectApi(APIView):
 				serializer.save()
 				return JsonResponse(code=status.HTTP_200_OK,data=serializer.data,msg='success')
 			return JsonResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR,data=serializer.errors,msg="fail")
+
 
 class ProjectApi(APIView):
 	def get_objects(self,pk):
@@ -36,7 +42,7 @@ class ProjectApi(APIView):
 		:return:
 		"""
 		project_objects = self.get_objects(pk)
-		serializer = ProjectSerializers(project_objects,many=True)
+		serializer = ProjectSerializers(project_objects)
 		return JsonResponse(code=status.HTTP_200_OK,data=serializer.data,msg="success")
 
 	def put(self,request,pk):
@@ -62,9 +68,11 @@ class ProjectApi(APIView):
 		:param pk: 项目id
 		:return:
 		"""
-		project_objects = self.get_objects(pk)
-		serializer = ProjectSerializers(project_objects)
-		with transaction.atomic():
-			serializer.delete()
-			return JsonResponse(code=status.HTTP_200_OK, msg="success")
+		try:
+			project_objects = self.get_objects(pk)
+			with transaction.atomic():
+				project_objects.delete()
+				return JsonResponse(code=status.HTTP_200_OK, msg="success")
+		except:
+			return JsonResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR,msg="未知错误")
 

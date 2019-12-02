@@ -34,10 +34,15 @@ class CasePostApi(APIView):
 		with transaction.atomic():
 			if serializers.is_valid():
 				serializers.save()
-				return JsonResponse(code=status.HTTP_200_OK,msg="success",data=data)
-			return JsonResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR,msg='fail',data=serializers.errors)
+				return JsonResponse(code=status.HTTP_200_OK,data=data,msg="success")
+			return JsonResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR,data=serializers.errors,msg='fail')
 
 	def get(self,request):
+		"""
+		获取用例列表接口
+		:param request:
+		:return:
+		"""
 		data = request.data
 		try:
 			page_size = int(data.get('page_size',20))
@@ -70,23 +75,44 @@ class CaseApiOperate(APIView):
 		except:
 			pass
 
-	def get(self,pk):
+	def get(self,request,pk):
+		"""
+		获取单个用例接口
+		:param request:
+		:param pk:
+		:return:
+		"""
 		case_objects = self.get_objects(pk)
 		serializer = CaseSerializers(case_objects)
 		return JsonResponse(code=status.HTTP_200_OK,msg="success",data=serializer.data)
 
 	def put(self,request,pk):
+		"""
+		修改用例接口
+		:param request:
+		:param pk:
+		:return:
+		"""
 		case_objects = self.get_objects(pk)
+		if not case_objects:
+			return JsonResponse(code=status.HTTP_404_NOT_FOUND, data={"res: not find pk:{0}".format(pk)},msg="fail")
+
 		serializer = CaseSerializers(case_objects,data=request.data)
 		with transaction.atomic():
 			if serializer.is_valid():
 				serializer.save()
-				return JsonResponse(code=status.HTTP_200_OK,msg="success",data=serializer.data)
-			return JsonResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR,msg='fail',data=serializer.errors)
+				return JsonResponse(code=status.HTTP_200_OK,data=serializer.data,msg="success")
+			return JsonResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR,data=serializer.errors,msg='fail')
 
-	def delete(self,pk):
+	def delete(self,request,pk):
+		"""
+		删除用例接口
+		:param pk:
+		:return:
+		"""
 		case_objects = self.get_objects(pk)
-		serializer = CaseSerializers(case_objects)
+		if not case_objects:
+			return JsonResponse(code=status.HTTP_404_NOT_FOUND, data={"res: not find pk:{0}".format(pk)},msg="fail")
 		with transaction.atomic():
-			serializer.delete()
+			case_objects.delete()
 			return JsonResponse(code=status.HTTP_200_OK,msg="success")
