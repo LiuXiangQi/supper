@@ -15,8 +15,8 @@ from webkeyword.models import CaseProcedure,CheckCase
 from webkeyword.utils.UIAutoCommon.case_step_judge import JudgeHolder
 from webkeyword.utils.api_response import JsonResponse
 from webkeyword.utils.UIAutoCommon.website_key_word import UIKeyWordMain
+from webkeyword.utils.logger import logger
 from rest_framework import status
-import abc
 
 class InternalDataStorage(object):
 	"""
@@ -82,7 +82,7 @@ class ExecuteKeyWordFunc(object):
 		: params internal_data_storage  InternalDataStorage类对象 用于数据存储
 		:return:
 		"""
-		cc = classHolder.id
+		logger.info("正在执行用例:{0}的第{1}个步骤".format(classHolder.case_id,classHolder.id))
 		link_id = classHolder.link_step_id
 		if link_id:
 			if not classHolder.element:
@@ -100,11 +100,13 @@ class ExecuteKeyWordFunc(object):
 		if send_key_value:
 			res = UIKeyWordMain(classHolder.driver).run_key_word_main(classHolder.key_word,classHolder.element,send_key_value)
 		else:
+			logger.info("开始使用关键字:{0} 操作元素{1}".format(classHolder.key_word,classHolder.element))
 			ui_key_word_main = UIKeyWordMain(classHolder.driver)
 			res = ui_key_word_main.run_key_word_main(classHolder.key_word,classHolder.element)
 
 		# 更新内存数据，便于关联上下文
 		internal_data_storage.data[str(classHolder.id)] = res
+		logger.info("用例:{0} 步骤：{1}时内存总记录的数据:{2}".format(classHolder.case_id,classHolder.id,str(internal_data_storage.data)))
 
 
 
