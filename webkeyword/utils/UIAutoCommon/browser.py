@@ -16,7 +16,7 @@ from webkeyword.utils.errorException import BrowserError
 
 class Browser(object):
 
-	def open_broswer(self,browser_type,url,webdriver_path):
+	def open_broswer(self,browser_type,webdriver_path,url):
 		start_open_browser_dict = {
 			"Chrome": lambda webdriver_path : webdriver.Chrome(executable_path=webdriver_path),
 			"Firefox": lambda webdriver_path : webdriver.Firefox(executable_path=webdriver_path)

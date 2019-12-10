@@ -44,6 +44,7 @@ class GlobalData(models.Model):
         return self.name
 
 
+
 class Project(models.Model):
     """项目表"""
     project_type = (
@@ -113,12 +114,14 @@ class CaseProcedure(models.Model):
         ("in","Contain"),
         ("not in","NotContain"),
     )
+
+    check_result_type = (("check","Check_step"),)
     id = models.AutoField(primary_key=True)
     caseId = models.IntegerField(verbose_name='用例id')
     datails = models.CharField(max_length=256,verbose_name='操作步骤描述',blank=True,null=True)
     KeyWord = models.CharField(max_length=256,verbose_name='关键字')
     element = models.CharField(max_length=256,verbose_name='元素及定位方式')
-    returnValue = models.CharField(max_length=256,verbose_name='元素操作的返回值',blank=True,null=True)
+    send_key_value = models.CharField(max_length=512,verbose_name='元素及定位方式',blank=True,null=True)
     step = models.IntegerField(verbose_name='步骤顺序',blank=False,null=False)
     link_step_id = models.CharField(max_length=256,verbose_name='关联上一步',blank=True,null=True)   # model id->1
     judge_key_word = models.CharField(max_length=256,verbose_name="判断类型",choices= judge_word_key_word_type,blank=True,null=True)
@@ -126,6 +129,9 @@ class CaseProcedure(models.Model):
     judge_step_set = models.CharField(max_length=256,verbose_name="条件语句成立执行语句",blank=True,null=True)
     for_step_set = models.CharField(max_length=256,verbose_name="for循环执行语句",blank=True,null=True)
     RunTime = models.CharField(max_length=256,verbose_name='执行时间',blank=True,null=True)
+    check_result_status = models.CharField(max_length=256,choices=check_result_type,blank=True,null=True,verbose_name="是否为检查点")
+    check_result_step = models.CharField(max_length=512,blank=True,null=True,verbose_name="检查点步骤")
+    result = models.CharField(max_length=1024,verbose_name="记录步骤执行结果",blank=True,null=True)
 
     class Meta:
         db_table = 'bt_case_procedure'
@@ -154,20 +160,16 @@ class CaseParameter(models.Model):
 
 class CheckCase(models.Model):
     """用例检查点表"""
+    result = (("pass",True),
+              ("fail",False),)
     id = models.AutoField(primary_key=True)
-    CaseId = models.IntegerField(verbose_name='用例id')
-    seq = models.IntegerField(verbose_name='步骤顺序')
-    datails = models.CharField(max_length=1024, verbose_name='操作步骤描述')
-    KeyWord = models.CharField(max_length=1024, verbose_name='关键字')
-    type = models.CharField(max_length=1024, verbose_name='定位方式')
-    ele = models.CharField(max_length=1024, verbose_name='操作元素')
-    value = models.CharField(max_length=1024, verbose_name='操作值')
-    CheckType = models.CharField(max_length=1024,verbose_name='断言类型')
-    CheckValue = models.CharField(max_length=1024,verbose_name='断言值')
+    caseId = models.IntegerField(verbose_name='用例id')
+    seq = models.IntegerField(verbose_name='用例第几个检查点步骤id')
+    check_result = models.CharField(max_length=256,verbose_name="检查点结果",choices=result,null=True,blank=True)
 
     class Meta:
-        db_table = 'bt_check_case'
-        verbose_name = verbose_name_plural = '用例表'
+        db_table = 'bt_check_case_report'
+        verbose_name = verbose_name_plural = '用例结果表'
 
     def __str__(self):
         return self.id

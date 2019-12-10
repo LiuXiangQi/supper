@@ -129,7 +129,7 @@ class CaseProcedureSerializers(serializers.ModelSerializer):
 	"""
 	class Meta:
 		model = CaseProcedure
-		fields = ("id","caseId","datails","step","KeyWord","element","returnValue","link_step_id",
+		fields = ("id","caseId","datails","step","KeyWord","element","send_key_value","returnValue","link_step_id",
 				  "judge_key_word","judge_step_set","for_step_set")
 
 
@@ -145,7 +145,7 @@ class CaseProcedureSerializers(serializers.ModelSerializer):
 		instance.step = validated_data.get("step",instance.step)
 		instance.KeyWord = validated_data.get("KeyWord",instance.KeyWord)
 		instance.element = validated_data.get("element",instance.element)
-		instance.returnValue = validated_data.get("returnValue",instance.returnValue)
+		instance.send_key_value = validated_data.get("send_key_value",instance.send_key_value)
 		instance.link_step_id = validated_data.get("link_step_id",instance.link_step_id)
 		instance.judge_key_word = validated_data.get("judge_key_word",instance.judge_word)
 		instance.judge_value = validated_data.get("judge_value",instance.judge_value)
@@ -171,6 +171,7 @@ class StartCaseSeriailzers(serializers.Serializer):
 	# 	("Chrome","Chrome"),
 	# 	("Firefox","Firefox")
 	# )
+	destUrl = serializers.CharField(max_length=256,required=True)
 	browserType = serializers.CharField(max_length=256,required=True)
 	webdriverPath = serializers.CharField(max_length=256,required=True)
 	projectId=serializers.IntegerField(required=True)

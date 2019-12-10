@@ -1,6 +1,13 @@
 # coding:utf-8
 
+"""本文件主要是用于对UI测试框架的UI操作关键字的封装 所有的关键字类都继承UIKeyWordHolder基类
+key_word_func 是基类定义的方法，每个子类都必须实现这个方法，一个子类就是一个元素操作的方法，
+禁止一个子类实现多个元素操作的方法
+"""
+
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 from webkeyword.utils.errorException import EleNOtFound
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.select import Select
@@ -196,8 +203,7 @@ class BaseView(object):
 			return is_checked
 
 	def tap(self,x,y,time=500):
-		"""
-		点击操作
+		"""点击操作
 		:param x:
 		:param y:
 		:param time:
@@ -250,7 +256,9 @@ class BaseView(object):
 		self.swipe(x1,y,x2,y,time)
 
 	def moveTo(self,loc):
-		"""鼠标移动到元素ele"""
+		"""鼠标移动到元素ele
+		"""
+
 		ele = self.find_element(loc)
 		ActionChains(self.driver).move_to_element(ele).perform()
 
@@ -276,9 +284,11 @@ class CheckEle(UIKeyWordHolder):
 	"""
 	def key_word_func(self, loc, time=20):
 		try:
-			WebDriverWait(self.driver, time).until(lambda x: x.find_element(*loc))
+			loc = eval(loc)
+			WebDriverWait(self.driver,time).until(lambda x: x.find_element(*loc))
 			return True
-		except:
+		except Exception as e:
+			print(e)
 			return False
 
 
@@ -288,9 +298,9 @@ class FindEle(UIKeyWordHolder):
 	"""
 
 	def key_word_func(self, loc, time=20):
-
 		if CheckEle(self.driver).key_word_func(loc,time):
-			loc_ele = self.driver.find_element(loc)
+			loc = eval(loc)
+			loc_ele = self.driver.find_element(*loc)
 			return loc_ele
 		else:
 			SystemScreenshotImage(self.driver).key_word_func()
@@ -322,7 +332,6 @@ class FindEles(UIKeyWordHolder):
 	"""
 	def key_word_func(self,loc,time=20):
 		"""
-
 		:param loc:  type-->tuple sample('xpath',ele)
 		:param time: 最大等待时间
 		:return: 已经找到的元素
@@ -359,6 +368,8 @@ class SendKeys(UIKeyWordHolder):
 		:param value:  send value
 		:return:
 		"""
+		ele.click()
+		ele.clear()
 		ele.send_keys(value)
 
 
@@ -434,3 +445,13 @@ class UserScreenshotImage(UIKeyWordHolder):
 			os.mkdir(image_dir)
 		file_path = os.path.join(image_dir,case_id+'_'+procedure_id+name+".png")
 		self.driver.get_screenshot_as_file(file_path)
+
+class UIKeyWordMain():
+
+	def __init__(self,driver):
+		self.driver = driver
+
+	def run_key_word_main(self,func,*args,**kwargs):
+		run_class_func = eval(func)(self.driver)
+		res = run_class_func.key_word_func(*args,**kwargs)
+		return res

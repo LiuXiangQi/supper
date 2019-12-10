@@ -116,9 +116,9 @@ DATABASES = {
         'NAME': 'db_test_api',
         'USER': 'developer',
         'PASSWORD': 'developer123456',
-        'HOST': '120.78.249.137',
+        'HOST': '119.23.78.182',
         'CONN_MAX_AGE':9,
-        'PORT': '3306',
+        'PORT': '31310',
     }
 }
 
@@ -153,7 +153,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

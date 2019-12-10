@@ -96,6 +96,15 @@ class NotContain(Judge):
 			return False
 
 
+class IfTrue(Judge):
+
+	def judge(self, search_value,judge_value=None):
+		if search_value == "True":
+			return True
+		else:
+			return False
+
+
 class GetJudgeValue(object):
 
 	def __init__(self):
@@ -119,9 +128,9 @@ class GetJudgeValue(object):
 		return judge_value
 
 
-class JudgeHoler(object):
+class JudgeHolder(object):
 	"""
 	步骤条件判断主方法
 	"""
 	def start_judge(self,func,*args,**kwargs):
-		return func.judge(*args,**kwargs)
+		return eval(func)().judge(*args,**kwargs)

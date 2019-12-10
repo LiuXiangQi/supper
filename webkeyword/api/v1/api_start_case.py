@@ -9,13 +9,14 @@
 # -----------------*----------------- 
 
 
-from rest_framework.parsers import JSONParser
 from rest_framework.views import APIView
 from rest_framework import status
 from webkeyword.utils.api_response import JsonResponse
 from webkeyword.utils.token_auth import get_user_id
 from webkeyword.serializers import StartCaseSeriailzers
-from webkeyword.models import Project,Case,CaseGroup,CaseProcedure
+from webkeyword.models import Project,Case,CaseGroup,CaseProcedure,GlobalData,CheckCase
+from webkeyword.utils.UIAutoCommon.runcommon import InternalDataStorage,ExecuteMain
+from webkeyword.utils.UIAutoCommon.browser import Browser
 
 
 class StartCaseRun(APIView):
@@ -50,13 +51,13 @@ class StartCaseRun(APIView):
 								msg="fail")
 
 	def get_case_procedure(self,caseId):
-		"""
-		获取用例下所有的操作步骤id
+		"""获取用例下所有的操作步骤id,并根据step大小正序排列
 		:param caseId:
 		:return:
 		"""
-		case_procedure_list_query = CaseProcedure.objects.filter(CaseId=caseId)
-		return case_procedure_list_query
+		case_procedure_list_query = CaseProcedure.objects.filter(caseId=caseId)
+		case_procedure_list_query_li = case_procedure_list_query.all().order_by('step')
+		return case_procedure_list_query_li
 
 	def post(self,request):
 		"""
@@ -73,7 +74,58 @@ class StartCaseRun(APIView):
 			caseId = data.get('caseId')
 			caseGroupId = data.get('caseGroupId')
 			caseId =  Case.objects.filter(id=caseId,caseGroupId=caseGroupId).first().id
-			case_procedure_list_query = self.get_case_procedure(caseId)
-			# TODO case_procedure_list_query 获取到单个用例的所有操作步骤，等待执行
-			return JsonResponse(code=status.HTTP_200_OK,msg="seccuss")
-		return JsonResponse(code=status.HTTP_500_INTERNAL_SERVER_ERROR,data=seriailzers.errors,msg="fail")
+
+			destUrl = data.get('destUrl')
+			browserType = data.get('browserType')
+			webdriverPath = data.get('webdriverPath')
+
+			dest_url_querySet = GlobalData.objects.filter(name=destUrl)
+			if not dest_url_querySet:
+				return JsonResponse(code=status.HTTP_200_OK, data={'res': "destUrl: {0}  不存在".format(destUrl)},
+									msg="seccuss")
+			# 检查全局参数是否合法
+			browser_querySet = GlobalData.objects.filter(name=browserType)
+			if not browser_querySet:
+				return JsonResponse(code=status.HTTP_200_OK, data={'res': "browserType: {0}  不存在".format(browserType)},
+									msg="seccuss")
+			webdriverPath_querySet = GlobalData.objects.filter(name=webdriverPath)
+
+			if not webdriverPath_querySet:
+				return JsonResponse(code=status.HTTP_200_OK, data={'res': "webdriverPath: {0}  不存在".format(webdriverPath)},
+									msg="seccuss")
+			dest_url = dest_url_querySet.first().params
+			browser_data = browser_querySet.first().params
+			webdriver_data = webdriverPath_querySet.first().params
+
+			driver = Browser().open_broswer(browser_data,webdriver_data,dest_url)
+
+			case_procedure_list_query_li = self.get_case_procedure(caseId)
+			if not case_procedure_list_query_li:
+				return JsonResponse(code=status.HTTP_200_OK, data={'res': "case: {0} 用例没有操作步骤".format(caseId)},
+									msg="seccuss")
+			# 用于初始化，记录用例的全局内部数据
+			internal_data_storage = InternalDataStorage()
+
+			# 执行用例的所有步骤
+			for case_procedure_list_query in case_procedure_list_query_li:
+				try:
+					ExecuteMain(driver).run(case_procedure_list_query,internal_data_storage)
+					result = "步骤执行完成"
+				except Exception as e:
+					result = "步骤执行失败：{0}".format(e)
+				# 记录步骤执行结果
+				CaseProcedure.objects.filter(id=case_procedure_list_query.id).update(result=result)
+
+			driver.close()
+
+		#最后整体用例检查是否成功
+		check_result_object = CheckCase.objects.filter(caseId=caseId)
+		result_li = []
+		for check_result in check_result_object:
+			result = check_result.check_result
+			result_li.append(result)
+		if "False" in result_li:
+			return JsonResponse(code=status.HTTP_200_OK, msg="fail", data={'res': result_li})
+		else:
+			return JsonResponse(code=status.HTTP_200_OK, msg="seccuss", data={'res': '200'})
+
