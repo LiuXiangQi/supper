@@ -14,22 +14,12 @@ from rest_framework import serializers
 from webkeyword.models import User,Project,CaseGroup,Case,CaseProcedure,GlobalData
 
 
-class UserSerializers(serializers.ModelSerializer):
+class UserSerializers(serializers.Serializer):
 	"""
 	用户信息序列化
 	"""
-	class Meta:
-		model = User
-		fields = ('username','password')
-
-
-class UserDesSerializers(serializers.ModelSerializer):
-	"""用户信息反序列化"""
 	username = serializers.CharField(max_length=255)
 	password = serializers.CharField(max_length=255)
-	class Meta:
-		model = User
-		fields = ('username','password')
 
 
 class ProjectSerializers(serializers.ModelSerializer):
@@ -167,13 +157,13 @@ class StartCaseSeriailzers(serializers.Serializer):
 	"""
 	执行单个测试用例接口序列化
 	"""
-	# BrowserType_chioce = (
-	# 	("Chrome","Chrome"),
-	# 	("Firefox","Firefox")
-	# )
+	LOGIN = (('true',True),
+			('false',False))
+
 	destUrl = serializers.CharField(max_length=256,required=True)
 	browserType = serializers.CharField(max_length=256,required=True)
 	webdriverPath = serializers.CharField(max_length=256,required=True)
 	projectId=serializers.IntegerField(required=True)
 	caseGroupId = serializers.IntegerField(required=True)
+	login= serializers.ChoiceField(choices=LOGIN)   # 是否需要登录
 	caseId = serializers.IntegerField(required=True)

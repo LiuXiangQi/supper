@@ -4,7 +4,7 @@
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 from webkeyword.utils.api_response import JsonResponse
-from webkeyword.serializers import UserSerializers,UserDesSerializers
+from webkeyword.serializers import UserSerializers
 from webkeyword.models import User,UserToken
 import time
 
@@ -27,7 +27,7 @@ class AuthUser(APIView):
 		if result:
 			return result
 		try:
-			user_serializer = UserDesSerializers(data=data)
+			user_serializer = UserSerializers(data=data)
 			if user_serializer.is_valid():
 				username = data.get('username', False)
 				password = data.get('password', False)
@@ -37,12 +37,11 @@ class AuthUser(APIView):
 					return JsonResponse(code=201,msg='账号密码错误')
 				# 里为了简单，应该是进行加密，再加上其他参数
 				token = str(time.time()) + username
-				obj_token = UserToken.objects.update_or_create(username=obj, defaults={'token': token})
+				UserToken.objects.update_or_create(username=obj, defaults={'token': token})
 				res = {"userId":user_id}
 				return JsonResponse(code=200,msg='登录成功',data=res)
 			else:
 				return JsonResponse(code=201,msg=user_serializer.errors)
 		except Exception as e:
-			print(e)
-			return JsonResponse(code=201,msg='参数有误')
+			return JsonResponse(code=201,msg='参数有误',data= {"res":e})
 

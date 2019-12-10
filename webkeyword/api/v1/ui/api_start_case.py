@@ -12,11 +12,10 @@
 from rest_framework.views import APIView
 from rest_framework import status
 from webkeyword.utils.api_response import JsonResponse
-from webkeyword.utils.token_auth import get_user_id
 from webkeyword.serializers import StartCaseSeriailzers
 from webkeyword.models import Project,Case,CaseGroup,CaseProcedure,GlobalData,CheckCase
-from webkeyword.utils.UIAutoCommon.runcommon import InternalDataStorage,ExecuteMain
-from webkeyword.utils.UIAutoCommon.browser import Browser
+from webkeyword.UIAutoCommon.runcommon import InternalDataStorage,ExecuteMain
+from webkeyword.UIAutoCommon.browser import Browser
 
 
 class StartCaseRun(APIView):
@@ -98,24 +97,10 @@ class StartCaseRun(APIView):
 			webdriver_data = webdriverPath_querySet.first().params
 
 			driver = Browser().open_broswer(browser_data,webdriver_data,dest_url)
-
-			case_procedure_list_query_li = self.get_case_procedure(caseId)
-			if not case_procedure_list_query_li:
-				return JsonResponse(code=status.HTTP_200_OK, data={'res': "case: {0} 用例没有操作步骤".format(caseId)},
-									msg="seccuss")
-			# 用于初始化，记录用例的全局内部数据
-			internal_data_storage = InternalDataStorage()
-
-			# 执行用例的所有步骤
-			for case_procedure_list_query in case_procedure_list_query_li:
-				try:
-					ExecuteMain(driver).run(case_procedure_list_query,internal_data_storage)
-					result = "步骤执行完成"
-				except Exception as e:
-					result = "步骤执行失败：{0}".format(e)
-				# 记录步骤执行结果
-				CaseProcedure.objects.filter(id=case_procedure_list_query.id).update(result=result)
-
+			login_status = data.get('login')
+			if login_status =="true":
+				self.execute_case(driver,1)   # 登录
+			self.execute_case(driver,caseId)
 			driver.close()
 
 		#最后整体用例检查是否成功
@@ -129,3 +114,22 @@ class StartCaseRun(APIView):
 		else:
 			return JsonResponse(code=status.HTTP_200_OK, msg="seccuss", data={'res': '200'})
 
+
+	def execute_case(self,driver,caseId):
+
+		case_procedure_list_query_li = self.get_case_procedure(caseId)
+		if not case_procedure_list_query_li:
+			return JsonResponse(code=status.HTTP_200_OK, data={'res': "case: {0} 用例没有操作步骤".format(caseId)},
+								msg="seccuss")
+		# 用于初始化，记录用例的全局内部数据
+		internal_data_storage = InternalDataStorage()
+
+		# 执行用例的所有步骤
+		for case_procedure_list_query in case_procedure_list_query_li:
+			try:
+				ExecuteMain(driver).run(case_procedure_list_query, internal_data_storage)
+				result = "步骤执行完成"
+			except Exception as e:
+				result = "步骤执行失败：{0}".format(e)
+			# 记录步骤执行结果
+			CaseProcedure.objects.filter(id=case_procedure_list_query.id).update(result=result)
