@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'webkeyword',
     'rest_framework',
     'rest_framework_swagger',
+    'corsheaders',
 ]
 
 # swagger 配置项
@@ -79,7 +80,38 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ]
  }
+MIDDLEWARE_CLASSES = {
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+}
 
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = ("*")
+
+CORS_ALLOW_METHODS = (
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+    'VIEW',
+)
+
+
+CORS_ALLOW_HEADERS = (
+    'XMLHttpRequest',
+    'X_FILENAME',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -96,7 +128,7 @@ ROOT_URLCONF = 'superproject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR+"/templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -126,7 +158,6 @@ DATABASES = {
         'PORT': '31310',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators

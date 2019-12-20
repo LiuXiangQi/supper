@@ -71,7 +71,7 @@ class ExecuteDataHodler():
 
 class ExecuteKeyWordFunc(object):
 
-	def key_word_run_func(self,classHolder,internal_data_storage):
+	def key_word_run_func(self,classHolder,internal_data_storage,index):
 		"""
 		1、关键字元素方法执行，如果 self.link_step_id（关联的上下文步骤的id） 存在，同时本id（步骤id）的self.element（目标元素）
 		为空时， self.element = self.returnValue
@@ -93,7 +93,11 @@ class ExecuteKeyWordFunc(object):
 										data=res,msg="fail")
 
 				link_data = internal_data_storage.data.get(link_id)
-				classHolder.element = link_data
+				if index:
+					classHolder.element = link_data[index]
+				else:
+					classHolder.element = link_data
+
 
 		send_key_value = classHolder.send_key_value
 
@@ -116,6 +120,20 @@ class ExecuteMain(object):
 		self.execute_data_holder = ExecuteDataHodler(driver)
 		self.judge_res = None
 
+	def execute_key_word_main(self,internal_data_storage,index):
+		"""
+		执行关键字方法
+		:param internal_data_storage:
+		:return:
+		"""
+		ExecuteKeyWordFunc().key_word_run_func(self.execute_data_holder, internal_data_storage,index)
+		judge_key_word = self.execute_data_holder.judge_key_word
+		if judge_key_word:
+			id = str(self.execute_data_holder.id)
+			search_value = str(internal_data_storage.data.get(id))
+			judge_value = str(self.execute_data_holder.judge_value)
+			self.judge_res = JudgeHolder().start_judge(judge_key_word, search_value, judge_value)
+
 	def execute_for_main(self,internal_data_storage,for_step):
 		"""
 		for 循环步骤
@@ -124,13 +142,17 @@ class ExecuteMain(object):
 		:return:
 		"""
 		for_step_li = eval(for_step)
-		for for_step in for_step_li:
-			internal_data_storage.exit_li.append(for_step)
-			case_procedure_list_query = CaseProcedure.objects.filter(id=for_step)
-			# 退出for循环
-			if self.execute_data_holder.element == "back":
-				break
-			self.run(case_procedure_list_query[0], internal_data_storage)
+
+		data = internal_data_storage.data.get(self.execute_data_holder.link_step_id)
+		data = eval(data)
+		for index,search_data in enumerate(data):
+			for for_step in for_step_li:
+				case_procedure_list_query = CaseProcedure.objects.filter(id=for_step)
+				# 退出for循环
+				if self.execute_data_holder.element == "back":
+					for for_step_i in for_step_li: internal_data_storage.exit_li.append(for_step_i)
+					break
+				self.run(case_procedure_list_query[0], internal_data_storage,index=index)
 
 	def execute_if_main(self,internal_data_storage):
 		"""
@@ -160,7 +182,7 @@ class ExecuteMain(object):
 											  check_result=self.judge_res)
 			check_case_report_obj.save()
 
-	def run(self,case_procedure_list_query,internal_data_storage):
+	def run(self,case_procedure_list_query,internal_data_storage,index=None):
 		"""
 		:param case_procedure_list_query:
 		:param internal_data_storage: 用例全局数据保存在内存的对象
@@ -171,13 +193,8 @@ class ExecuteMain(object):
 		# 执行步骤id 不在已经执行步骤的 判断步骤里
 		if self.execute_data_holder.id not in internal_data_storage.exit_li:
 			# 有ele 元素的关键字操作
-			ExecuteKeyWordFunc().key_word_run_func(self.execute_data_holder,internal_data_storage)
-			judge_key_word = self.execute_data_holder.judge_key_word
-			if judge_key_word:
-				id = str(self.execute_data_holder.id)
-				search_value = str(internal_data_storage.data.get(id))
-				judge_value = str(self.execute_data_holder.judge_value)
-				self.judge_res = JudgeHolder().start_judge(judge_key_word,search_value,judge_value)
+			if self.execute_data_holder.key_word:
+				self.execute_key_word_main(internal_data_storage,index)
 
 			# 是否为检查点
 			status = self.execute_data_holder.check_result_status
@@ -185,6 +202,9 @@ class ExecuteMain(object):
 				self.execute_check_main()
 
 			# 执行操作步骤的for循环语句
+			#########################################################################
+			#                  for循环暂弃用，目前前功能不够完善，无法被使用               #
+			#########################################################################
 			for_step = self.execute_data_holder.for_step_set
 			if for_step:
 				self.execute_for_main(internal_data_storage,for_step)

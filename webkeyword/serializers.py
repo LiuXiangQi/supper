@@ -11,7 +11,8 @@
 # -----------------*-----------------
 
 from rest_framework import serializers
-from webkeyword.models import User,Project,CaseGroup,Case,CaseProcedure,GlobalData
+from webkeyword.models import User,Project,CaseGroup,Case,CaseProcedure,GlobalData,\
+	TearDownCase
 
 
 class UserSerializers(serializers.Serializer):
@@ -92,7 +93,7 @@ class CaseSerializers(serializers.ModelSerializer):
 
 	class Meta:
 		model = Case
-		fields = ('id','caseName','datails','caseGroupId')
+		fields = ('id','caseName','description','caseGroupId')
 
 	def create(self, validated_data):
 
@@ -106,11 +107,10 @@ class CaseSerializers(serializers.ModelSerializer):
 		:return:
 		"""
 		instance.caseName = validated_data.get("caseName",instance.caseName)
-		instance.datails = validated_data.get("datails",instance.datails)
+		instance.description = validated_data.get("description",instance.description)
 		instance.caseGroupId = validated_data.get("caseGroupId",instance.caseGroupId)
 		instance.save()
 		return instance
-
 
 
 class CaseProcedureSerializers(serializers.ModelSerializer):
@@ -119,9 +119,8 @@ class CaseProcedureSerializers(serializers.ModelSerializer):
 	"""
 	class Meta:
 		model = CaseProcedure
-		fields = ("id","caseId","datails","step","KeyWord","element","send_key_value","returnValue","link_step_id",
+		fields = ("id","caseId","description","step","KeyWord","element","send_key_value","link_step_id",
 				  "judge_key_word","judge_step_set","for_step_set")
-
 
 	def update(self, instance, validated_data):
 		"""
@@ -131,7 +130,7 @@ class CaseProcedureSerializers(serializers.ModelSerializer):
 		:return:
 		"""
 		instance.caseId = validated_data.get("caseId",instance.caseId)
-		instance.datails = validated_data.get("datails",instance.datails)
+		instance.description = validated_data.get("description",instance.description)
 		instance.step = validated_data.get("step",instance.step)
 		instance.KeyWord = validated_data.get("KeyWord",instance.KeyWord)
 		instance.element = validated_data.get("element",instance.element)
@@ -153,7 +152,38 @@ class CaseProcedureSerializers(serializers.ModelSerializer):
 		return CaseProcedure.objects.create(**validated_data)
 
 
-class StartCaseSeriailzers(serializers.Serializer):
+class TearDownCaseSerializer(serializers.ModelSerializer):
+	"""
+	用例sql 数据清理
+	"""
+
+	class Meta:
+		mode = TearDownCase
+		fildes = ('caseId','groupId','sql_text_li')
+
+	def update(self, instance, validated_data):
+		"""
+		重写update 方法
+		:param instance:
+		:param validated_data:
+		:return:
+		"""
+		instance.caseId = validated_data.get('caseId',instance.caseId)
+		instance.groupId = validated_data.get('groupId',instance.groupId)
+		instance.sql_text = validated_data.get('sql_text',instance.sql_text)
+		instance.save()
+		return instance
+
+	def create(self, validated_data):
+		"""
+		重写create 方法
+		:param validated_data:
+		:return:
+		"""
+		return TearDownCase.objests.create(**validated_data)
+
+
+class StartCaseSerializers(serializers.Serializer):
 	"""
 	执行单个测试用例接口序列化
 	"""

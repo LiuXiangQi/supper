@@ -37,10 +37,9 @@ class CreateCaseGroupApi(APIView):
 		:param request:
 		:return:
 		"""
-		data = request.data
 		try:
-			page_size = int(data.get('page_size',20))
-			page = int(data.get('page',1))
+			page_size = int(request.GET.get('page_size',20))
+			page = int(request.GET.get('page',1))
 		except Exception as ex:
 			return JsonResponse(code=status.HTTP_400_BAD_REQUEST, msg=ex)
 		case_objects = CaseGroup.objects.all()

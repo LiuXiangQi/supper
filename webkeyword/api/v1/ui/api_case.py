@@ -43,13 +43,22 @@ class CasePostApi(APIView):
 		:param request:
 		:return:
 		"""
-		data = request.data
 		try:
-			page_size = int(data.get('page_size',20))
-			page = int(data.get('page',1))
+			page_size = int(request.GET.get('page_size',20))
+			page = int(request.GET.get('page',1))
 		except Exception as ex:
 			return JsonResponse(code=status.HTTP_400_BAD_REQUEST, msg=ex)
-		case_objects = Case.objects.all()
+
+		caseGroupId = request.GET.get('caseGroupId',0)
+		if isinstance(caseGroupId,int):
+			if caseGroupId:
+				case_objects = Case.objects.filter(caseGroupId=caseGroupId)
+			else:
+				case_objects = Case.objects.all()
+		else:
+			res = "caseGroupId must be int"
+			return JsonResponse(code=status.HTTP_404_NOT_FOUND, data= {'res':res},msg='fail')
+
 		paginator = Paginator(case_objects, page_size)
 		total = paginator.num_pages
 		try:

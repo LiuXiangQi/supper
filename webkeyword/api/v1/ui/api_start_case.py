@@ -12,10 +12,11 @@
 from rest_framework.views import APIView
 from rest_framework import status
 from webkeyword.utils.api_response import JsonResponse
-from webkeyword.serializers import StartCaseSeriailzers
-from webkeyword.models import Project,Case,CaseGroup,CaseProcedure,GlobalData,CheckCase
+from webkeyword.serializers import StartCaseSerializers
+from webkeyword.models import Project,Case,CaseGroup,CaseProcedure,GlobalData,CheckCase,TearDownCase
 from webkeyword.UIAutoCommon.runcommon import InternalDataStorage,ExecuteMain
 from webkeyword.UIAutoCommon.browser import Browser
+from webkeyword.utils.db_connect import DbOption
 
 
 class StartCaseRun(APIView):
@@ -23,7 +24,7 @@ class StartCaseRun(APIView):
 	def check_params(self,data):
 		"""
 		执行用例，检查参数的有效性
-		:param data: projectId、caseGroupId、caseId 是否有效
+		:param data: projectId、caseId 是否有效
 		:return:
 		"""
 		projectId = data.get("projectId")
@@ -65,7 +66,7 @@ class StartCaseRun(APIView):
 		:return:
 		"""
 		data = request.data
-		seriailzers = StartCaseSeriailzers(data=data)
+		seriailzers = StartCaseSerializers(data=data)
 		if seriailzers.is_valid():
 			result = self.check_params(seriailzers.data)
 			if result:
@@ -102,6 +103,15 @@ class StartCaseRun(APIView):
 				self.execute_case(driver,1)   # 登录
 			self.execute_case(driver,caseId)
 			driver.close()
+
+			###################################################################################
+			#                                      数据清理                                     #
+			###################################################################################
+			queryset = TearDownCase.objects.filter(caseId=caseId,groupId=caseGroupId)
+			if queryset:
+				sql_text_li = eval(queryset.sql_text)
+				for sql_text in sql_text_li:
+					DbOption().operation(sql_text)
 
 		#最后整体用例检查是否成功
 		check_result_object = CheckCase.objects.filter(caseId=caseId)

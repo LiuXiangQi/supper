@@ -22,6 +22,8 @@ from webkeyword import urls
 from webkeyword import views
 from webkeyword.utils.schema_view import schema_view
 
+from webkeyword.route.route import index,login
+
 
 #路由
 # router = routers.DefaultRouter()
@@ -41,4 +43,6 @@ urlpatterns = [
     url(r'^docs/', schema_view, name="docs"),
     path('admin/', admin.site.urls),
     url(r'^api/',include(urls)),
+    url(r'login',login),
+    url(r'^$',index),
 ]

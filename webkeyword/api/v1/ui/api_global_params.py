@@ -30,8 +30,8 @@ class GlobalParamsApi(APIView):
 		"""
 		data = request.data
 		try:
-			page_size = data.get('page_size',20)
-			page = int(data.get('page',1))
+			page_size = request.GET.get('page_size',20)
+			page = int(request.GET.get('page',1))
 		except Exception as ex:
 			return JsonResponse(code=status.HTTP_400_BAD_REQUEST, msg=ex)
 
@@ -75,6 +75,8 @@ class GlobalParamsQureyApi(APIView):
 
 	def get(self,request,pk):
 		queryset = self.check_query_obj(pk)
+		if not queryset:
+			return JsonResponse(code=status.HTTP_404_NOT_FOUND,data={"res":"没有id为：{}的数据".format(pk)},msg="fail")
 		serialzers = GlobalParamsSerializers(queryset)
 		return JsonResponse(code=status.HTTP_200_OK,data=serialzers.data,msg="seccuss")
 
@@ -97,7 +99,3 @@ class GlobalParamsQureyApi(APIView):
 								msg="fail")
 		queryset.delete()
 		return JsonResponse(code=status.HTTP_200_OK,msg="success")
-
-
-
-

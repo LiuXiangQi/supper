@@ -90,7 +90,7 @@ class Case(models.Model):
     """case 表"""
     id = models.AutoField(primary_key=True)
     caseName = models.CharField(max_length=200,verbose_name='用例名称',unique=True)
-    datails = models.CharField(max_length=1024,blank=True,null=True,verbose_name='描述')
+    description = models.CharField(max_length=1024,blank=True,null=True,verbose_name='描述')
     caseGroupId = models.IntegerField(verbose_name='用例组id')
     report = models.CharField(max_length=1024,verbose_name='用例结果')
 
@@ -118,9 +118,9 @@ class CaseProcedure(models.Model):
     check_result_type = (("check","Check_step"),)
     id = models.AutoField(primary_key=True)
     caseId = models.IntegerField(verbose_name='用例id')
-    datails = models.CharField(max_length=256,verbose_name='操作步骤描述',blank=True,null=True)
+    description = models.CharField(max_length=256,verbose_name='操作步骤描述',blank=True,null=True)
     KeyWord = models.CharField(max_length=256,verbose_name='关键字')
-    element = models.CharField(max_length=256,verbose_name='元素及定位方式')
+    element = models.CharField(max_length=256,verbose_name='元素及定位方式',blank=True,null=True)
     send_key_value = models.CharField(max_length=512,verbose_name='元素及定位方式',blank=True,null=True)
     step = models.IntegerField(verbose_name='步骤顺序',blank=False,null=False)
     link_step_id = models.CharField(max_length=256,verbose_name='关联上一步',blank=True,null=True)   # model id->1
@@ -175,6 +175,21 @@ class CheckCase(models.Model):
         return self.id
 
 
+class TearDownCase(models.Model):
+    """清理用例数据表"""
+    id = models.AutoField(primary_key=True)
+    groupId = models.IntegerField(verbose_name='用例组id')
+    caseId = models.IntegerField(verbose_name='用例id')
+    sql_text = models.CharField(max_length=512,null=True,blank=True,verbose_name="清理sql语句")
+
+    class Meta:
+        db_table = 'tear_down_case'
+        verbose_name = verbose_name_plural = "用例数据回归表"
+
+    def __str__(self):
+        return self.id
+
+
 class KeyWord(models.Model):
     """关键字表"""
     id = models.AutoField(primary_key=True)
@@ -187,3 +202,36 @@ class KeyWord(models.Model):
 
     def __str__(self):
         return self.id
+
+
+
+###########################################################################################
+#                           interface 接口测试数据表                                         #
+###########################################################################################
+models_types = (
+               ('get',"get"),
+               ('post','post'),
+               ('patch','patch'),
+               ('put','put'),
+               ('delete','delete')
+)
+
+params_types = (
+    ('raw','raw'),
+    ('params','params')
+)
+
+
+class InterfaceApi(models.Model):
+
+    id = models.AutoField(primary_key=True)
+    caseGroupId = models.CharField(max_length=128,verbose_name='用例组')
+    name = models.CharField(max_length=512,verbose_name='用例名称')
+    pathUrl = models.CharField(max_length=512,verbose_name='请求地址')
+    model = models.CharField(max_length=128,choices=models_types,verbose_name='请求方式')
+    paramsType = models.CharField(max_length=128,choices=params_types,verbose_name='参数请求类型')
+    pathParams = models.CharField(max_length=512,verbose_name='请求url上的参数')
+    status = models.CharField(max_length=128,default='1',verbose_name='是否有效')
+
+    class Mate:
+        db_tanle = 'interface_api'

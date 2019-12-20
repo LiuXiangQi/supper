@@ -67,14 +67,14 @@ class CaseDatailsList(APIView):
 		:param request:
 		:return:
 		"""
-		data = request.data
+		caseId = request.GET.get('caseId',False)
 		try:
-			page_size = int(data.get('page_size',20))
-			page = int(data.get('page',1))
+			page_size = int(request.GET.get('page_size',20))
+			page = int(request.GET.get('page',20))
 		except Exception as ex:
 			return JsonResponse(code=status.HTTP_400_BAD_REQUEST, msg=ex)
 
-		case_objects = CaseProcedure.objects.all()
+		case_objects = CaseProcedure.objects.filter(caseId=caseId)
 		paginator = Paginator(case_objects, page_size)
 		total = paginator.num_pages
 		try:
@@ -95,9 +95,9 @@ class CaseDatailsOpter(APIView):
 
 	def get_object(self,pk):
 		try:
-			case_datails = CaseProcedure.objects.get(pk=pk)
+			case_datails = CaseProcedure.objects.get(id=pk)
 			return case_datails
-		except:
+		except Exception as e:
 			pass
 
 	def get(self,request,pk):

@@ -395,6 +395,11 @@ class GetValue(UIKeyWordHolder):
 		return value
 
 
+class EvalCode(UIKeyWordHolder):
+
+	def key_word_func(self,code):
+		eval(code)
+
 class GetAttribute(UIKeyWordHolder):
 	"""
 	获取元素的属性值
