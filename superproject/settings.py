@@ -155,7 +155,10 @@ DATABASES = {
         'PASSWORD': 'developer123456',
         'HOST': '119.23.78.182',
         'CONN_MAX_AGE':9,
-        'PORT': '31310',
+        'PORT': '31310'
+    #     'OPTIONS': {
+    #         "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+    #     }
     }
 }
 

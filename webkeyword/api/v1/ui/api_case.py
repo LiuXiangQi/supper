@@ -49,7 +49,7 @@ class CasePostApi(APIView):
 		except Exception as ex:
 			return JsonResponse(code=status.HTTP_400_BAD_REQUEST, msg=ex)
 
-		caseGroupId = request.GET.get('caseGroupId',0)
+		caseGroupId = int(request.GET.get('caseGroupId',0))
 		if isinstance(caseGroupId,int):
 			if caseGroupId:
 				case_objects = Case.objects.filter(caseGroupId=caseGroupId)

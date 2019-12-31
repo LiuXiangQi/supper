@@ -12,7 +12,7 @@
 
 from rest_framework import serializers
 from webkeyword.models import User,Project,CaseGroup,Case,CaseProcedure,GlobalData,\
-	TearDownCase
+	TearDownCase,ApiInfo,CaseGroupHost
 
 
 class UserSerializers(serializers.Serializer):
@@ -30,16 +30,22 @@ class ProjectSerializers(serializers.ModelSerializer):
 		fields = ('id','name','version','type','description')
 
 	def update(self, instance, validated_data):
-		updateTime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 		instance.name = validated_data.get("name",instance.name)
 		instance.version = validated_data.get("version",instance.version)
 		instance.description = validated_data.get("description",instance.description)
-		instance.updateTime = updateTime
+		instance.updateTime = validated_data.get("updateTime", instance.updateTime)
 		instance.save()
 		return instance
 
 	def create(self, validated_data):
 		return Project.objects.create(**validated_data)
+
+class DesProjectSerializers(serializers.ModelSerializer):
+	"""项目信息序列化"""
+	class Meta:
+		model = Project
+		fields = ('id','name','version','type','description','createTime','updateTime')
+
 
 
 class GlobalParamsSerializers(serializers.ModelSerializer):
@@ -68,15 +74,13 @@ class CaseGroupSerializers(serializers.ModelSerializer):
 	"""
 	class Meta:
 		model = CaseGroup
-		fields = ('id','groupName','description','projectId','createTime','updateTime')
+		fields = ('id','groupName','description','projectId')
 
 	def update(self, instance, validated_data):
-		# updateTime = serializers.DateTimeField(format="%Y-%m-%d %H:%m:%s", required=False, read_only=True)
 
 		instance.projectId = validated_data.get("projectId",instance.projectId)
 		instance.groupName = validated_data.get("groupName",instance.groupName)
 		instance.description = validated_data.get("description",instance.description)
-		instance.createTime = validated_data.get("createTime",instance.createTime)
 		instance.updateTime = validated_data.get("updateTime",instance.updateTime)
 		instance.save()
 		return instance
@@ -84,6 +88,15 @@ class CaseGroupSerializers(serializers.ModelSerializer):
 	def create(self, validated_data):
 
 		return CaseGroup.objects.create(**validated_data)
+
+
+class DesCaseGroupSerializers(serializers.ModelSerializer):
+	"""
+	用例分组信息 序列化
+	"""
+	class Meta:
+		model = CaseGroup
+		fields = ('id','groupName','description','projectId','createTime','updateTime')
 
 
 class CaseSerializers(serializers.ModelSerializer):
@@ -158,8 +171,8 @@ class TearDownCaseSerializer(serializers.ModelSerializer):
 	"""
 
 	class Meta:
-		mode = TearDownCase
-		fildes = ('caseId','groupId','sql_text_li')
+		model = TearDownCase
+		fields = ('caseId','groupId','sql_text_li')
 
 	def update(self, instance, validated_data):
 		"""
@@ -197,3 +210,64 @@ class StartCaseSerializers(serializers.Serializer):
 	caseGroupId = serializers.IntegerField(required=True)
 	login= serializers.ChoiceField(choices=LOGIN)   # 是否需要登录
 	caseId = serializers.IntegerField(required=True)
+
+
+class CaseGroupHostSerializer(serializers.ModelSerializer):
+	"""
+	添加host序列化
+	"""
+	class Meta:
+		model = CaseGroupHost
+		fields = ('caseGroupId','hostName','host')
+
+	def update(self, instance, validated_data):
+		instance.caseGroupId = validated_data.get('caseGroupId',instance.caseGroupId)
+		instance.hostName = validated_data.get('hostName',instance.hostName)
+		instance.host = validated_data.get('host',instance.host)
+		instance.save()
+		return instance
+
+	def create(self, validated_data):
+
+		return  CaseGroupHost.objects.create(**validated_data)
+
+
+class AddInterfaceApiSerializer(serializers.ModelSerializer):
+	"""
+	添加接口
+	"""
+	headers = serializers.JSONField()
+	requestparams = serializers.JSONField()
+
+	class Meta:
+		model = ApiInfo
+		fields = ('caseId','seqId','httpType','name','path','model','paramsType','headers',
+				  'requestparams')  # apiparams
+
+
+class UpdateInterfaceSerializer(serializers.Serializer):
+	httpTypes = (
+		('Http','Http'),
+		('Https','Https')
+	)
+	models_types = (
+		('get', "get"),
+		('post', 'post'),
+		('patch', 'patch'),
+		('put', 'put'),
+		('delete', 'delete')
+	)
+	params_types = (
+		('raw', 'raw'),
+		('params', 'params')
+	)
+
+	httpType = serializers.ChoiceField(choices=httpTypes,default='Http',read_only=True)
+	name = serializers.CharField(max_length=128,allow_blank=True,allow_null=True,read_only=True)
+	path = serializers.CharField(max_length=512,allow_blank=True,allow_null=True,read_only=True)
+	model = serializers.ChoiceField(choices=models_types,read_only=True)
+	paramsType = serializers.ChoiceField(choices=params_types,read_only=True)
+	headers = serializers.JSONField()
+	requestparams = serializers.JSONField()
+
+

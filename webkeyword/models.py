@@ -49,15 +49,18 @@ class Project(models.Model):
     """项目表"""
     project_type = (
         ('web','web'),
-        ('App','App')
+        ('App','App'),
+        ('Api','Api')
     )
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50,verbose_name='项目名称',unique=True)
     version = models.CharField(max_length=50,verbose_name='项目版本')
     type = models.CharField(max_length=50,verbose_name='项目类型',choices=project_type)
     description = models.CharField(max_length=1024,blank=True,null=True,verbose_name='描述')
-    create_time = models.DateTimeField(auto_now_add=True,verbose_name='创建时间')
     user_id = models.IntegerField(verbose_name='创建者id',unique=False,blank=False,null =True)
+    createTime = models.CharField(max_length=200,default='0', verbose_name='创建时间')
+    updateTime = models.CharField(max_length=200,default='0', verbose_name='修改时间')
+
     # null =True 数据库可以为空
     # blank = True只是可以不传数据
     class Meta:
@@ -75,8 +78,8 @@ class CaseGroup(models.Model):
     groupName = models.CharField(max_length=200,verbose_name='组名称',unique=True)
     description = models.CharField(max_length=1024,blank=True,null=True,verbose_name='描述')
     projectId = models.IntegerField(verbose_name='项目id')
-    createTime = models.DateTimeField(verbose_name="保存日期",default=timezone.now)
-    updateTime = models.DateTimeField(auto_now_add=True)
+    createTime = models.CharField(max_length=200,verbose_name='创建时间')
+    updateTime = models.CharField(max_length=200,verbose_name='修改时间')
 
     class Meta:
         db_table = 'bt_case_group'
@@ -222,16 +225,113 @@ params_types = (
 )
 
 
-class InterfaceApi(models.Model):
+types = (
+    ('String','String'),
+    ('Int','Int')
+)
 
+HttpTypes = (
+    ('Http','http'),
+    ('Https','https')
+)
+
+
+class CaseGroupHost(models.Model):
+    """
+    host
+    """
+    id = models.AutoField(primary_key=True)
+    caseGroupId = models.IntegerField(verbose_name='用例组id')
+    hostName = models.CharField(max_length=128,verbose_name="host 名称")
+    host = models.CharField(max_length=256,verbose_name='host')
+
+    class Meta:
+        db_table = 'api_case_group_host'
+        verbose_name = verbose_name_plural = "用例组host"
+
+    def __str__(self):
+        return self.hostName
+
+
+class ApiInfo(models.Model):
+    """
+    接口信息
+    """
+    id = models.AutoField(primary_key=True)
+    caseId = models.IntegerField(verbose_name='用例id')
+    seqId = models.CharField(max_length=20,verbose_name='步骤id')
+    httpType = models.CharField(max_length=20,choices=HttpTypes,verbose_name='请求方式')
+    name = models.CharField(max_length=512,verbose_name='用例名称')
+    path = models.CharField(max_length=512,verbose_name='请求地址')
+    model = models.CharField(max_length=128,choices=models_types,verbose_name='请求方式',default='Http')
+    paramsType = models.CharField(max_length=128,choices=params_types,verbose_name='参数请求类型')
+    pathParams = models.CharField(max_length=512,verbose_name='请求url上的参数')
+    requestparams = models.CharField(max_length=512,verbose_name='请求参数')
+    status = models.CharField(max_length=128,default='1',verbose_name='是否有效')
+    createTime = models.CharField(max_length=200,default=0, verbose_name='创建时间')
+    updateTime = models.CharField(max_length=200,default=0, verbose_name='修改时间')
+
+    class Meta:
+        db_table= 'api_info'
+        verbose_name = verbose_name_plural = '接口用例表'
+
+    def __str__(self):
+        return self.id
+
+
+class ApiHeaders(models.Model):
+
+    """
+    请求头表
+    """
+    id = models.AutoField(primary_key=True)
+    caseId = models.CharField(max_length=20, verbose_name='用例id')
+    seqId = models.CharField(max_length=20, verbose_name='步骤id')
+    name = models.CharField(max_length=256, verbose_name='请求头参数')
+    value = models.CharField(max_length=1024, verbose_name='请求头值')
+
+    class Meta:
+        db_table = 'api_headers'
+        verbose_name = verbose_name_plural = "接口请求头"
+
+    def __str__(self):
+        return self.id
+
+
+class ApiParams(models.Model):
+    """
+    接口参数
+    """
+    id = models.AutoField(primary_key=True)
+    caseId = models.CharField(max_length=20,verbose_name='用例id')
+    seqId = models.CharField(max_length=20,verbose_name='步骤id')
+    name = models.CharField(max_length=256,verbose_name='参数名称')
+    value = models.CharField(max_length=1024,verbose_name='参数值')
+
+    class Meta:
+        db_table = 'api_params'
+        verbose_name = verbose_name_plural = '接口参数表'
+
+    def __str__(self):
+        return self.apiId
+
+
+class Interfacelibrary(models.Model):
+    """
+    接口仓库
+    """
     id = models.AutoField(primary_key=True)
     caseGroupId = models.CharField(max_length=128,verbose_name='用例组')
-    name = models.CharField(max_length=512,verbose_name='用例名称')
+    name = models.CharField(max_length=128,verbose_name='接口名称')
     pathUrl = models.CharField(max_length=512,verbose_name='请求地址')
     model = models.CharField(max_length=128,choices=models_types,verbose_name='请求方式')
     paramsType = models.CharField(max_length=128,choices=params_types,verbose_name='参数请求类型')
     pathParams = models.CharField(max_length=512,verbose_name='请求url上的参数')
-    status = models.CharField(max_length=128,default='1',verbose_name='是否有效')
+    params = models.CharField(max_length=512,verbose_name='参数')
 
-    class Mate:
-        db_tanle = 'interface_api'
+    class Meta:
+        db_table = 'api_library'
+        verbose_name = verbose_name_plural = '接口仓库表'
+
+    def __str__(self):
+        return self.id
